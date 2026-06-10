@@ -10,4 +10,6 @@ PROCESSED_DATA_DIR = DATA_DIR / "processed"
 
 STEAM_APP_LIST_PATH = RAW_DATA_DIR / "steam_app_list.json"
 STEAM_APP_DETAILS_RAW_PATH = RAW_DATA_DIR / "steam_app_details.jsonl"
+STEAM_APP_REVIEWS_RAW_PATH = RAW_DATA_DIR / "steam_app_reviews.jsonl"
 STEAM_APP_DETAILS_CSV_PATH = PROCESSED_DATA_DIR / "steam_app_details.csv"
+STEAM_GAMES_DATASET_CSV_PATH = PROCESSED_DATA_DIR / "steam_games_dataset.csv"

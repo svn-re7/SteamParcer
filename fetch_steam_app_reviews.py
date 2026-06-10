@@ -1,22 +1,26 @@
 import json
 from json import JSONDecodeError
+from pathlib import Path
 from time import sleep
 from urllib.error import HTTPError, URLError
 
 import pandas as pd
 
+from pipeline_config import (
+    APP_LIMIT,
+    ERROR_SLEEP,
+    LOAD_ALL_APPS,
+    REVIEWS_REQUEST_DELAY as REQUEST_DELAY,
+)
 from project_paths import (
-    STEAM_APP_DETAILS_CSV_PATH,
+    STEAM_APP_LIST_PATH,
+    STEAM_APP_REVIEWS_CSV_PATH,
     STEAM_APP_REVIEWS_RAW_PATH,
-    STEAM_GAMES_DATASET_CSV_PATH,
 )
 from steam_api_client import SteamApiClient
 
 
 API_URL = "https://store.steampowered.com/appreviews"
-
-REQUEST_DELAY = 0.1
-ERROR_SLEEP = 10
 
 REVIEW_COLUMNS = [
     "appid",
@@ -24,6 +28,16 @@ REVIEW_COLUMNS = [
     "total_positive",
     "total_negative",
 ]
+
+
+def load_app_ids(path: Path) -> list[int]:
+    # загрузка appid
+    with path.open("r", encoding="utf-8") as file:
+        data = json.load(file)
+
+    apps = data.get("response", {}).get("apps", [])
+
+    return [int(app["appid"]) for app in apps if "appid" in app]
 
 
 def load_raw_payloads() -> dict[int, dict]:
@@ -83,8 +97,8 @@ def build_reviews_dataframe(app_ids: list[int], payloads: dict[int, dict]) -> pd
 
 def main() -> None:
     # подготовка данных
-    details_df = pd.read_csv(STEAM_APP_DETAILS_CSV_PATH)
-    app_ids = details_df["appid"].dropna().astype(int).drop_duplicates().tolist()
+    all_app_ids = load_app_ids(STEAM_APP_LIST_PATH)
+    app_ids = all_app_ids if LOAD_ALL_APPS else all_app_ids[:APP_LIMIT]
     payloads = load_raw_payloads()
     downloaded_app_ids = set(payloads)
     total_selected = len(app_ids)
@@ -124,15 +138,13 @@ def main() -> None:
         print(f"загружено {index}/{total_selected}: {appid}")
         sleep(REQUEST_DELAY)
 
-    # сохранение датасета
+    # сохранение таблицы
     reviews_df = build_reviews_dataframe(app_ids, payloads)
-    dataset_df = details_df.merge(reviews_df, on="appid", how="left")
+    STEAM_APP_REVIEWS_CSV_PATH.parent.mkdir(parents=True, exist_ok=True)
+    reviews_df.to_csv(STEAM_APP_REVIEWS_CSV_PATH, index=False, encoding="utf-8")
 
-    STEAM_GAMES_DATASET_CSV_PATH.parent.mkdir(parents=True, exist_ok=True)
-    dataset_df.to_csv(STEAM_GAMES_DATASET_CSV_PATH, index=False, encoding="utf-8")
-
-    print(f"строк в csv: {len(dataset_df)}")
-    print(f"файл: {STEAM_GAMES_DATASET_CSV_PATH}")
+    print(f"строк в csv: {len(reviews_df)}")
+    print(f"файл: {STEAM_APP_REVIEWS_CSV_PATH}")
 
 
 if __name__ == "__main__":

@@ -8,6 +8,12 @@ from urllib.error import HTTPError, URLError
 import numpy as np
 import pandas as pd
 
+from pipeline_config import (
+    APP_LIMIT,
+    DETAILS_REQUEST_DELAY as REQUEST_DELAY,
+    ERROR_SLEEP,
+    LOAD_ALL_APPS,
+)
 from project_paths import (
     STEAM_APP_DETAILS_CSV_PATH,
     STEAM_APP_DETAILS_RAW_PATH,
@@ -18,11 +24,6 @@ from steam_api_client import SteamApiClient
 
 API_URL = "https://store.steampowered.com/api/appdetails"
 FILTERS = "basic,price_overview,platforms,release_date,genres,categories,developers,publishers"
-
-APP_LIMIT = 1_000
-LOAD_ALL_APPS = False
-REQUEST_DELAY = 0.1
-ERROR_SLEEP = 10
 
 COLUMNS = [
     "appid",
@@ -200,7 +201,7 @@ def main() -> None:
         while payload is None:
             try:
                 payload = client.get_json(params)
-            except (URLError, TimeoutError, ConnectionResetError, OSError, JSONDecodeError) as error:
+            except (HTTPError, URLError, TimeoutError, ConnectionResetError, OSError, JSONDecodeError) as error:
                 print(f"сбой {index}/{total_selected}: {appid}, {error}, сон {ERROR_SLEEP} сек")
                 sleep(ERROR_SLEEP)
 

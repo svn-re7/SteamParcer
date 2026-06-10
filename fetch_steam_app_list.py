@@ -1,16 +1,13 @@
 import json
 import os
 from pathlib import Path
-from urllib.error import HTTPError, URLError
+from urllib.error import URLError
 
 from dotenv import load_dotenv
 
+from project_paths import ENV_PATH, STEAM_APP_LIST_PATH
 from steam_api_client import SteamApiClient
 
-
-PROJECT_DIR = Path(__file__).resolve().parent
-ENV_PATH = PROJECT_DIR / ".env"
-OUTPUT_PATH = PROJECT_DIR / "data" / "raw" / "steam_app_list.json"
 
 API_URL = "https://api.steampowered.com/IStoreService/GetAppList/v1/"
 MAX_RESULTS = 50_000
@@ -85,11 +82,11 @@ def main() -> None:
     except URLError as error:
         raise RuntimeError(f"ошибка: {error.reason}") from error
 
-    save_json(data, OUTPUT_PATH)
+    save_json(data, STEAM_APP_LIST_PATH)
 
     apps_count = len(data.get("response", {}).get("apps", []))
     print(f"сохранено игр: {apps_count}")
-    print(f"файл: {OUTPUT_PATH}")
+    print(f"файл: {STEAM_APP_LIST_PATH}")
 
 
 if __name__ == "__main__":

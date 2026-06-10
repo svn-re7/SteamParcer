@@ -1,4 +1,5 @@
 import json
+from json import JSONDecodeError
 from time import sleep
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
@@ -18,22 +19,25 @@ class SteamApiClient:
         self.retries = retries
         self.timeout = timeout
         self.sleep_seconds = sleep_seconds
-        self.headers = headers or {"User-Agent": "SteamAnalyticsParser/1.0"}
+        self.headers = headers or {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                          "AppleWebKit/537.36 (KHTML, like Gecko) "
+                          "Chrome/120.0.0.0 Safari/537.36"
+        }
 
     def get_json(self, params: dict[str, str]) -> dict:
         # подготовка запроса
         url = f"{self.base_url}?{urlencode(params)}"
-        request = Request(url, headers=self.headers)
 
         for attempt in range(1, self.retries + 1):
             try:
-                return self._load_json(request)
-            except HTTPError as error: # ловим ошибки типа 400 и 500
+                return self._load_json(url)
+            except HTTPError as error: # ловим ошибки http
                 if not self._can_retry_http(error) or attempt == self.retries:
                     raise
 
                 sleep(self.sleep_seconds * attempt)
-            except (URLError, TimeoutError, ConnectionResetError): # ловим ошибки плохой сети
+            except (URLError, TimeoutError, ConnectionResetError, OSError, JSONDecodeError): # ловим временные сбои
                 if attempt == self.retries:
                     raise
 
@@ -41,8 +45,10 @@ class SteamApiClient:
 
         raise RuntimeError("не удалось получить json")
 
-    def _load_json(self, request: Request) -> dict:
+    def _load_json(self, url: str) -> dict:
         # чтение ответа
+        request = Request(url, headers=self.headers)
+
         with urlopen(request, timeout=self.timeout) as response:
             charset = response.headers.get_content_charset() or "utf-8"
             return json.loads(response.read().decode(charset))

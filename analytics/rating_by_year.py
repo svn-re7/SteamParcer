@@ -57,62 +57,72 @@ def compute_top_genres_by_year(df: pd.DataFrame) -> pd.DataFrame:
 
 def plot_top_genres(top5: pd.DataFrame) -> None:
     years = sorted(top5["year"].unique())
-    n_years = len(years)
-    mid = (n_years + 1) // 2
-    year_groups = [years[:mid], years[mid:]]
-
-    fig, axes = plt.subplots(2, 1, figsize=(12, 10), sharey=True)
-
-    bar_width = 0.17
     colors = plt.cm.Set2.colors
 
-    for row_idx, year_group in enumerate(year_groups):
-        ax = axes[row_idx]
-        x = range(len(year_group))
+    fig, ax = plt.subplots(figsize=(10, 12))
 
-        for rank in range(5):
-            offset = (rank - 2) * bar_width
-            bars = []
-            labels = []
+    y_pos = []
+    genre_labels = []
+    values = []
+    bar_colors = []
+    year_ticks = []
+    year_labels = []
 
-            for year in year_group:
-                year_rows = top5[top5["year"] == year]
-                if rank < len(year_rows):
-                    row = year_rows.iloc[rank]
-                    bars.append(row["positive_share"])
-                    labels.append(row["genres_list"])
-                else:
-                    bars.append(0)
-                    labels.append("")
+    current_y = 0
+    for year in years:
+        year_rows = (
+            top5[top5["year"] == year]
+            .sort_values("positive_share", ascending=False)
+            .head(5)
+        )
 
-            ax.bar(
-                [xi + offset for xi in x],
-                bars,
-                bar_width,
-                label=f"Rank {rank + 1}",
-                color=colors[rank % len(colors)],
+        start_y = current_y
+        for rank, (_, row) in enumerate(year_rows.iterrows()):
+            y_pos.append(current_y)
+            genre_labels.append(row["genres_list"])
+            values.append(row["positive_share"])
+            bar_colors.append(colors[rank % len(colors)])
+            current_y += 1
+
+        year_ticks.append((start_y + current_y - 1) / 2)
+        year_labels.append(str(year))
+        current_y += 1  # gap between year groups
+
+    ax.barh(y_pos, values, height=0.7, color=bar_colors, zorder=2)
+    ax.set_yticks(year_ticks)
+    ax.set_yticklabels(year_labels, fontsize=9, fontweight="bold")
+    ax.invert_yaxis()
+    ax.set_xlim(0, 1.05)
+    ax.grid(axis="x", alpha=0.3, zorder=0)
+    ax.set_xlabel("Positive review share", fontsize=9)
+
+    for y, val, label in zip(y_pos, values, genre_labels):
+        ax.text(
+            val + 0.012,
+            y,
+            f"{label}  {val:.1%}",
+            va="center",
+            fontsize=6.5,
+        )
+
+    n_items_per_year = 6
+    for i in range(1, len(years)):
+        sep = i * n_items_per_year - 1
+        ax.axhline(y=sep, color="gray", linewidth=0.8, alpha=0.6)
+
+    for i in range(len(years)):
+        start = i * n_items_per_year
+        end = start + 4
+        if i % 2 == 1:
+            ax.axhspan(
+                start - 0.5,
+                end + 0.5,
+                color="lightgray",
+                alpha=0.15,
+                zorder=0,
             )
 
-            for xi, (bar_val, label) in enumerate(zip(bars, labels)):
-                if bar_val > 0:
-                    ax.text(
-                        xi + offset,
-                        bar_val + 0.005,
-                        label,
-                        ha="center",
-                        va="bottom",
-                        fontsize=7,
-                        rotation=45,
-                    )
-
-        ax.set_xticks(list(x))
-        ax.set_xticklabels([str(y) for y in year_group], fontsize=9)
-        ax.set_ylabel("Positive review share", fontsize=9)
-        ax.set_ylim(0, 1.05)
-        ax.grid(axis="y", alpha=0.3)
-
-    axes[0].legend(loc="upper left", fontsize=8, ncol=5)
-    fig.suptitle("Top 5 most loved genres by year", fontsize=13, y=1.01)
+    ax.set_title("Top 5 most loved genres by year (2010 - 2025)", fontsize=13)
     plt.tight_layout()
     out_path = f"{OUTPUT_DIR}/top_genres_by_year.png"
     fig.savefig(out_path, dpi=150)

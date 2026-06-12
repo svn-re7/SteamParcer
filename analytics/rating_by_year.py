@@ -1,10 +1,9 @@
 import json
-
 import matplotlib.pyplot as plt
 import pandas as pd
+from project_paths import STEAM_GAMES_DATASET_CSV_PATH, TOP_GENRES_BY_YEAR_PLOT_PATH
 
-DATASET_PATH = "data/processed/steam_games_dataset.csv"
-OUTPUT_DIR = "analytics/graphs"
+DATASET_PATH = STEAM_GAMES_DATASET_CSV_PATH
 
 
 def load_dataset(path: str) -> pd.DataFrame:
@@ -124,9 +123,9 @@ def plot_top_genres(top5: pd.DataFrame) -> None:
 
     ax.set_title("Top 5 most loved genres by year (2010 - 2025)", fontsize=13)
     plt.tight_layout()
-    out_path = f"{OUTPUT_DIR}/top_genres_by_year.png"
-    fig.savefig(out_path, dpi=150)
-    print(f"Plot saved to {out_path}")
+    TOP_GENRES_BY_YEAR_PLOT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(TOP_GENRES_BY_YEAR_PLOT_PATH, dpi=150)
+    print(f"Plot saved to {TOP_GENRES_BY_YEAR_PLOT_PATH}")
 
 
 def main() -> None:

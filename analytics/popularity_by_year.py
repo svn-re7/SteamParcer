@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from project_paths import STEAM_GAMES_DATASET_CSV_PATH, TOP_GENRES_BY_YEAR_PLOT_PATH
+from project_paths import STEAM_GAMES_DATASET_CSV_PATH, TOP_GENRES_BY_POPULARITY_PLOT_PATH
 
 DATASET_PATH = STEAM_GAMES_DATASET_CSV_PATH
 
@@ -36,11 +36,6 @@ def compute_top_genres_by_year(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
 
     df = df[(df["year"] >= 2010) & (df["year"] <= 2025)]
 
-    df["total_reviews_game"] = df["total_positive"] + df["total_negative"]
-    review_threshold = df["total_reviews_game"].quantile(0.75)
-    df = df[df["total_reviews_game"] >= review_threshold].copy()
-    print(f"Reviews threshold (75th percentile): {review_threshold:.0f}")
-
     year_game_counts = df.groupby("year")["appid"].nunique().to_dict()
 
     grouped = (
@@ -54,16 +49,23 @@ def compute_top_genres_by_year(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
 
     grouped["total_reviews"] = grouped["total_positive"] + grouped["total_negative"]
     grouped = grouped[grouped["total_reviews"] > 0].copy()
-    grouped["positive_share"] = grouped["total_positive"] / grouped["total_reviews"]
 
     top5 = (
-        grouped.sort_values(["year", "positive_share"], ascending=[True, False])
+        grouped.sort_values(["year", "total_reviews"], ascending=[True, False])
         .groupby("year")
         .head(5)
         .reset_index(drop=True)
     )
 
     return top5, year_game_counts
+
+
+def format_review_count(n: int) -> str:
+    if n >= 1_000_000:
+        return f"{n / 1_000_000:.1f}M"
+    if n >= 1_000:
+        return f"{n / 1_000:.0f}K"
+    return str(n)
 
 
 def plot_top_genres(top5: pd.DataFrame, year_game_counts: dict) -> None:
@@ -83,7 +85,7 @@ def plot_top_genres(top5: pd.DataFrame, year_game_counts: dict) -> None:
     for year in years:
         year_rows = (
             top5[top5["year"] == year]
-            .sort_values("positive_share", ascending=False)
+            .sort_values("total_reviews", ascending=False)
             .head(5)
         )
 
@@ -91,27 +93,26 @@ def plot_top_genres(top5: pd.DataFrame, year_game_counts: dict) -> None:
         for rank, (_, row) in enumerate(year_rows.iterrows()):
             y_pos.append(current_y)
             genre_labels.append(row["genres_list"])
-            values.append(row["positive_share"])
+            values.append(row["total_reviews"])
             bar_colors.append(colors[rank % len(colors)])
             current_y += 1
 
         year_ticks.append((start_y + current_y - 1) / 2)
         year_labels.append(f"{year} ({year_game_counts.get(year, 0)})")
-        current_y += 1  # gap between year groups
+        current_y += 1
 
     ax.barh(y_pos, values, height=0.7, color=bar_colors, zorder=2)
     ax.set_yticks(year_ticks)
     ax.set_yticklabels(year_labels, fontsize=9, fontweight="bold")
     ax.invert_yaxis()
-    ax.set_xlim(0, 1.05)
     ax.grid(axis="x", alpha=0.3, zorder=0)
-    ax.set_xlabel("Positive review share", fontsize=9)
+    ax.set_xlabel("Total reviews", fontsize=9)
 
     for y, val, label in zip(y_pos, values, genre_labels):
         ax.text(
-            val + 0.012,
+            val + max(values) * 0.005,
             y,
-            f"{label}  {val:.1%}",
+            f"{label}  {format_review_count(val)}",
             va="center",
             fontsize=6.5,
         )
@@ -133,11 +134,11 @@ def plot_top_genres(top5: pd.DataFrame, year_game_counts: dict) -> None:
                 zorder=0,
             )
 
-    ax.set_title("Top 5 most loved genres by year (2010 - 2025)", fontsize=13)
+    ax.set_title("Top 5 most popular genres by year (2010 - 2025)", fontsize=13)
     plt.tight_layout()
-    TOP_GENRES_BY_YEAR_PLOT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(TOP_GENRES_BY_YEAR_PLOT_PATH, dpi=150)
-    print(f"Plot saved to {TOP_GENRES_BY_YEAR_PLOT_PATH}")
+    TOP_GENRES_BY_POPULARITY_PLOT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(TOP_GENRES_BY_POPULARITY_PLOT_PATH, dpi=150)
+    print(f"Plot saved to {TOP_GENRES_BY_POPULARITY_PLOT_PATH}")
 
 
 def main() -> None:

@@ -8,6 +8,7 @@ import pandas as pd
 
 from pipeline_config import (
     APP_LIMIT,
+    BUILD_FROM_ALL_RAW,
     ERROR_SLEEP,
     LOAD_ALL_APPS,
     REVIEWS_REQUEST_DELAY as REQUEST_DELAY,
@@ -98,9 +99,15 @@ def build_reviews_dataframe(app_ids: list[int], payloads: dict[int, dict]) -> pd
 def main() -> None:
     # подготовка данных
     all_app_ids = load_app_ids(STEAM_APP_LIST_PATH)
-    app_ids = all_app_ids if LOAD_ALL_APPS else all_app_ids[:APP_LIMIT]
+    all_app_ids = all_app_ids[::-1]
     payloads = load_raw_payloads()
     downloaded_app_ids = set(payloads)
+
+    if BUILD_FROM_ALL_RAW:
+        app_ids = sorted(downloaded_app_ids)
+    else:
+        app_ids = all_app_ids if LOAD_ALL_APPS else all_app_ids[:APP_LIMIT]
+
     total_selected = len(app_ids)
 
     # загрузка отзывов

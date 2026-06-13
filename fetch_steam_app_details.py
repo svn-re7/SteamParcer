@@ -10,6 +10,7 @@ import pandas as pd
 
 from pipeline_config import (
     APP_LIMIT,
+    BUILD_FROM_ALL_RAW,
     DETAILS_REQUEST_DELAY as REQUEST_DELAY,
     ERROR_SLEEP,
     LOAD_ALL_APPS,
@@ -175,9 +176,15 @@ def build_dataframe(app_ids: np.ndarray, payloads: dict[int, dict]) -> pd.DataFr
 def main() -> None:
     # подготовка данных
     app_ids = load_app_ids(STEAM_APP_LIST_PATH)
-    selected_app_ids = app_ids if LOAD_ALL_APPS else app_ids[:APP_LIMIT]
+    app_ids = app_ids[::-1]
     payloads = load_raw_payloads(STEAM_APP_DETAILS_RAW_PATH)
     downloaded_app_ids = set(payloads)
+
+    if BUILD_FROM_ALL_RAW:
+        selected_app_ids = np.array(sorted(downloaded_app_ids), dtype=np.int64)
+    else:
+        selected_app_ids = app_ids if LOAD_ALL_APPS else app_ids[:APP_LIMIT]
+
     client = SteamApiClient(API_URL)
     total_selected = len(selected_app_ids)
 

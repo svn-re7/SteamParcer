@@ -22,6 +22,7 @@ DATASET_PATH = STEAM_GAMES_DATASET_CSV_PATH
 
 # фильтры и размеры топов
 REVIEW_QUANTILE = 0.25
+MIN_TOTAL_REVIEWS = 500
 MIN_YEAR = 2010
 MAX_YEAR = 2025
 TOP_ALL_TIME_N = 10
@@ -43,8 +44,11 @@ def prepare_bayesian_scores(df: pd.DataFrame) -> tuple[pd.DataFrame, float, floa
     df["total_negative"] = pd.to_numeric(df["total_negative"], errors="coerce")
     df = df.dropna(subset=["total_positive", "total_negative"]).copy()
 
-    # считаем общий объем отзывов и берем верхние 75% игр по этому объему
+    # считаем общий объем отзывов и убираем слишком маленькие игры
     df["total_reviews"] = df["total_positive"] + df["total_negative"]
+    df = df[df["total_reviews"] >= MIN_TOTAL_REVIEWS].copy()
+
+    # после абсолютного порога берем верхние 75% игр по объему отзывов
     min_reviews = df["total_reviews"].quantile(REVIEW_QUANTILE)
     df = df[df["total_reviews"] >= min_reviews].copy()
 
@@ -267,6 +271,7 @@ def main() -> None:
 
     scored_df, m, c, min_reviews = prepare_bayesian_scores(df)
     print(f"After review filter: {len(scored_df)} rows")
+    print(f"Minimum reviews: {MIN_TOTAL_REVIEWS}")
     print(f"Review threshold: {min_reviews:.0f}")
     print(f"m: {m:.4f}")
     print(f"C: {c:.0f}")

@@ -1,12 +1,18 @@
 import json
 import os
+import sys
 from pathlib import Path
 from urllib.error import URLError
 
 from dotenv import load_dotenv
 
+PROJECT_DIR = Path(__file__).resolve().parents[1]
+
+if str(PROJECT_DIR) not in sys.path:
+    sys.path.append(str(PROJECT_DIR))
+
 from project_paths import ENV_PATH, STEAM_APP_LIST_PATH
-from steam_api_client import SteamApiClient
+from parser.steam_api_client import SteamApiClient
 
 
 API_URL = "https://api.steampowered.com/IStoreService/GetAppList/v1/"

@@ -1,4 +1,12 @@
+import sys
+from pathlib import Path
+
 import pandas as pd
+
+PROJECT_DIR = Path(__file__).resolve().parents[1]
+
+if str(PROJECT_DIR) not in sys.path:
+    sys.path.append(str(PROJECT_DIR))
 
 from project_paths import (
     STEAM_APP_DETAILS_CSV_PATH,

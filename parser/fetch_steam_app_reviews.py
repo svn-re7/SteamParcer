@@ -1,4 +1,5 @@
 import json
+import sys
 from json import JSONDecodeError
 from pathlib import Path
 from time import sleep
@@ -6,7 +7,12 @@ from urllib.error import HTTPError, URLError
 
 import pandas as pd
 
-from pipeline_config import (
+PROJECT_DIR = Path(__file__).resolve().parents[1]
+
+if str(PROJECT_DIR) not in sys.path:
+    sys.path.append(str(PROJECT_DIR))
+
+from parser.pipeline_config import (
     APP_LIMIT,
     BUILD_FROM_ALL_RAW,
     ERROR_SLEEP,
@@ -18,7 +24,7 @@ from project_paths import (
     STEAM_APP_REVIEWS_CSV_PATH,
     STEAM_APP_REVIEWS_RAW_PATH,
 )
-from steam_api_client import SteamApiClient
+from parser.steam_api_client import SteamApiClient
 
 
 API_URL = "https://store.steampowered.com/appreviews"

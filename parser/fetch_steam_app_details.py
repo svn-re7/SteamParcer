@@ -1,4 +1,5 @@
 import json
+import sys
 from datetime import datetime
 from json import JSONDecodeError
 from pathlib import Path
@@ -8,7 +9,12 @@ from urllib.error import HTTPError, URLError
 import numpy as np
 import pandas as pd
 
-from pipeline_config import (
+PROJECT_DIR = Path(__file__).resolve().parents[1]
+
+if str(PROJECT_DIR) not in sys.path:
+    sys.path.append(str(PROJECT_DIR))
+
+from parser.pipeline_config import (
     APP_LIMIT,
     BUILD_FROM_ALL_RAW,
     DETAILS_REQUEST_DELAY as REQUEST_DELAY,
@@ -20,7 +26,7 @@ from project_paths import (
     STEAM_APP_DETAILS_RAW_PATH,
     STEAM_APP_LIST_PATH,
 )
-from steam_api_client import SteamApiClient
+from parser.steam_api_client import SteamApiClient
 
 
 API_URL = "https://store.steampowered.com/api/appdetails"

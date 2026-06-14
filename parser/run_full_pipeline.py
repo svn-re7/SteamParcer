@@ -1,8 +1,15 @@
+import sys
+from pathlib import Path
 from threading import Thread
 
-import build_steam_dataset
-import fetch_steam_app_details
-import fetch_steam_app_reviews
+PROJECT_DIR = Path(__file__).resolve().parents[1]
+
+if str(PROJECT_DIR) not in sys.path:
+    sys.path.append(str(PROJECT_DIR))
+
+from parser import build_steam_dataset
+from parser import fetch_steam_app_details
+from parser import fetch_steam_app_reviews
 
 
 def run_thread(name: str, target, errors: list[tuple[str, BaseException]]) -> None:

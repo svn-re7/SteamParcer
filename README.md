@@ -18,7 +18,7 @@ API_KEY=your_key_here
 
 ## Где менять настройки
 
-Основные настройки находятся в `pipeline_config.py`:
+Основные настройки находятся в `parser/pipeline_config.py`:
 
 ```python
 APP_LIMIT = 110
@@ -44,7 +44,7 @@ ERROR_SLEEP = 10
 Запускается редко, чтобы получить общий список AppID:
 
 ```powershell
-.\.venv\Scripts\python.exe fetch_steam_app_list.py
+.\.venv\Scripts\python.exe parser\fetch_steam_app_list.py
 ```
 
 Результат:
@@ -58,39 +58,39 @@ data/raw/steam_app_list.json
 Основной запуск на ночь:
 
 ```powershell
-.\.venv\Scripts\python.exe run_full_pipeline.py
+.\.venv\Scripts\python.exe parser\run_full_pipeline.py
 ```
 
 Он параллельно запускает:
 
-- `fetch_steam_app_details.py`
-- `fetch_steam_app_reviews.py`
+- `parser/fetch_steam_app_details.py`
+- `parser/fetch_steam_app_reviews.py`
 
 После завершения обоих парсеров запускает:
 
-- `build_steam_dataset.py`
+- `parser/build_steam_dataset.py`
 
 ## Что делает каждый файл
 
-`steam_api_client.py`  
+`parser/steam_api_client.py`  
 Общий HTTP-клиент для запросов к Steam. Добавляет headers, timeout и retry.
 
-`fetch_steam_app_list.py`  
+`parser/fetch_steam_app_list.py`  
 Скачивает список игр через `IStoreService/GetAppList` и сохраняет raw JSON.
 
-`fetch_steam_app_details.py`  
+`parser/fetch_steam_app_details.py`  
 Читает `steam_app_list.json`, дергает `appdetails`, сохраняет raw JSONL и собирает таблицу метаданных.
 
-`fetch_steam_app_reviews.py`  
+`parser/fetch_steam_app_reviews.py`  
 Читает `steam_app_list.json`, дергает `appreviews`, сохраняет raw JSONL и собирает таблицу оценок.
 
-`build_steam_dataset.py`  
+`parser/build_steam_dataset.py`  
 Объединяет таблицу метаданных и таблицу оценок по `appid`.
 
-`run_full_pipeline.py`  
+`parser/run_full_pipeline.py`  
 Запускает details и reviews в двух потоках, ждёт завершения и собирает финальный датасет.
 
-`pipeline_config.py`  
+`parser/pipeline_config.py`  
 Настройки лимита, задержек и полного сбора.
 
 `project_paths.py`  
@@ -124,14 +124,14 @@ data/processed/steam_games_dataset.csv
 Парсеры сохраняют каждый успешный ответ сразу в `.jsonl`. Если запуск оборвался, можно просто снова запустить:
 
 ```powershell
-.\.venv\Scripts\python.exe run_full_pipeline.py
+.\.venv\Scripts\python.exe parser\run_full_pipeline.py
 ```
 
 Уже скачанные AppID будут пропущены, а недостающие продолжат скачиваться.
 
 ## Полный сбор
 
-Для полного сбора поменять в `pipeline_config.py`:
+Для полного сбора поменять в `parser/pipeline_config.py`:
 
 ```python
 LOAD_ALL_APPS = True
@@ -140,7 +140,7 @@ LOAD_ALL_APPS = True
 После этого запустить:
 
 ```powershell
-.\.venv\Scripts\python.exe run_full_pipeline.py
+.\.venv\Scripts\python.exe parser\run_full_pipeline.py
 ```
 
 Для тестового запуска лучше оставить:

@@ -1,4 +1,5 @@
 import json
+import sys
 from datetime import datetime
 from json import JSONDecodeError
 from pathlib import Path
@@ -8,8 +9,14 @@ from urllib.error import HTTPError, URLError
 import numpy as np
 import pandas as pd
 
-from pipeline_config import (
+PROJECT_DIR = Path(__file__).resolve().parents[1]
+
+if str(PROJECT_DIR) not in sys.path:
+    sys.path.append(str(PROJECT_DIR))
+
+from parser.pipeline_config import (
     APP_LIMIT,
+    BUILD_FROM_ALL_RAW,
     DETAILS_REQUEST_DELAY as REQUEST_DELAY,
     ERROR_SLEEP,
     LOAD_ALL_APPS,
@@ -19,7 +26,7 @@ from project_paths import (
     STEAM_APP_DETAILS_RAW_PATH,
     STEAM_APP_LIST_PATH,
 )
-from steam_api_client import SteamApiClient
+from parser.steam_api_client import SteamApiClient
 
 
 API_URL = "https://store.steampowered.com/api/appdetails"
@@ -175,9 +182,15 @@ def build_dataframe(app_ids: np.ndarray, payloads: dict[int, dict]) -> pd.DataFr
 def main() -> None:
     # подготовка данных
     app_ids = load_app_ids(STEAM_APP_LIST_PATH)
-    selected_app_ids = app_ids if LOAD_ALL_APPS else app_ids[:APP_LIMIT]
+    app_ids = app_ids[::-1]
     payloads = load_raw_payloads(STEAM_APP_DETAILS_RAW_PATH)
     downloaded_app_ids = set(payloads)
+
+    if BUILD_FROM_ALL_RAW:
+        selected_app_ids = np.array(sorted(downloaded_app_ids), dtype=np.int64)
+    else:
+        selected_app_ids = app_ids if LOAD_ALL_APPS else app_ids[:APP_LIMIT]
+
     client = SteamApiClient(API_URL)
     total_selected = len(selected_app_ids)
 

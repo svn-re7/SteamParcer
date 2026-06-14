@@ -1,4 +1,5 @@
 import json
+import sys
 from json import JSONDecodeError
 from pathlib import Path
 from time import sleep
@@ -6,8 +7,14 @@ from urllib.error import HTTPError, URLError
 
 import pandas as pd
 
-from pipeline_config import (
+PROJECT_DIR = Path(__file__).resolve().parents[1]
+
+if str(PROJECT_DIR) not in sys.path:
+    sys.path.append(str(PROJECT_DIR))
+
+from parser.pipeline_config import (
     APP_LIMIT,
+    BUILD_FROM_ALL_RAW,
     ERROR_SLEEP,
     LOAD_ALL_APPS,
     REVIEWS_REQUEST_DELAY as REQUEST_DELAY,
@@ -17,7 +24,7 @@ from project_paths import (
     STEAM_APP_REVIEWS_CSV_PATH,
     STEAM_APP_REVIEWS_RAW_PATH,
 )
-from steam_api_client import SteamApiClient
+from parser.steam_api_client import SteamApiClient
 
 
 API_URL = "https://store.steampowered.com/appreviews"
@@ -98,9 +105,15 @@ def build_reviews_dataframe(app_ids: list[int], payloads: dict[int, dict]) -> pd
 def main() -> None:
     # подготовка данных
     all_app_ids = load_app_ids(STEAM_APP_LIST_PATH)
-    app_ids = all_app_ids if LOAD_ALL_APPS else all_app_ids[:APP_LIMIT]
+    all_app_ids = all_app_ids[::-1]
     payloads = load_raw_payloads()
     downloaded_app_ids = set(payloads)
+
+    if BUILD_FROM_ALL_RAW:
+        app_ids = sorted(downloaded_app_ids)
+    else:
+        app_ids = all_app_ids if LOAD_ALL_APPS else all_app_ids[:APP_LIMIT]
+
     total_selected = len(app_ids)
 
     # загрузка отзывов

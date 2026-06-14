@@ -5,10 +5,16 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+PROJECT_DIR = Path(__file__).resolve().parents[1]
+
+if str(PROJECT_DIR) not in sys.path:
+    sys.path.append(str(PROJECT_DIR))
+
 from project_paths import STEAM_GAMES_DATASET_CSV_PATH, TOP_GENRES_BY_YEAR_PLOT_PATH
 
 DATASET_PATH = STEAM_GAMES_DATASET_CSV_PATH
+MIN_TOTAL_REVIEWS = 500
 
 
 def load_dataset(path: str) -> pd.DataFrame:
@@ -53,7 +59,7 @@ def compute_top_genres_by_year(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     )
 
     grouped["total_reviews"] = grouped["total_positive"] + grouped["total_negative"]
-    grouped = grouped[grouped["total_reviews"] > 0].copy()
+    grouped = grouped[grouped["total_reviews"] >= MIN_TOTAL_REVIEWS].copy()
     grouped["positive_share"] = grouped["total_positive"] / grouped["total_reviews"]
 
     top5 = (
